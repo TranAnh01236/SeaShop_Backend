@@ -1,9 +1,7 @@
 package org.trananh.shoppingappbackend.controller;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -14,9 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.trananh.shoppingappbackend.exception.ResourceNotFoundException;
-import org.trananh.shoppingappbackend.model.StructureValue;
 import org.trananh.shoppingappbackend.model.User;
-import org.trananh.shoppingappbackend.repository.StructureValueRepository;
 import org.trananh.shoppingappbackend.repository.UserRepository;
 import org.trananh.shoppingappbackend.ultilities.MyHttpResponse;
 import org.trananh.shoppingappbackend.ultilities.MyHttpResponseArray;

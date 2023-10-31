@@ -33,17 +33,20 @@ public class PriceHeader implements Serializable{
 	@GenericGenerator(name = "price_id_generator", strategy = "org.trananh.shoppingappbackend.ultilities.idGenerator.PriceIdGenerator")
 	private String id;
 	
-	@Column(name = "description", nullable = true)
+	@Column(name = "name", nullable = false, columnDefinition = "nvarchar(max)")
+	private String name;
+	
+	@Column(name = "description", nullable = true, columnDefinition = "nvarchar(max)")
 	private String description;
 	
-	@Column(name = "start_date")
+	@Column(name = "start_date", nullable = true)
 	private Date startDate;
 	
-	@Column(name = "end_date")
+	@Column(name = "end_date", nullable = true)
 	private Date endDate;
 	
-	@Column(name = "status")
-	private boolean status = true;
+	@Column(name = "status", nullable = false)
+	private int status = 0;
 	
 	@ManyToOne
 	@JoinColumn(name = "create_user_id")
@@ -62,9 +65,10 @@ public class PriceHeader implements Serializable{
 		this.priceDetails = new ArrayList<PriceDetail>();
 	}
 
-	public PriceHeader(String id, String description, Date startDate, Date endDate, boolean status, User createUser) {
+	public PriceHeader(String id, String name, String description, Date startDate, Date endDate, int status, User createUser) {
 		super();
 		this.id = id;
+		this.name = name;
 		this.description = description;
 		this.startDate = startDate;
 		this.endDate = endDate;
@@ -83,6 +87,14 @@ public class PriceHeader implements Serializable{
 
 	public String getDescription() {
 		return description;
+	}
+	
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	public void setDescription(String description) {
@@ -105,11 +117,11 @@ public class PriceHeader implements Serializable{
 		this.endDate = endDate;
 	}
 
-	public boolean isStatus() {
+	public int getStatus() {
 		return status;
 	}
 
-	public void setStatus(boolean status) {
+	public void setStatus(int status) {
 		this.status = status;
 	}
 
@@ -123,8 +135,8 @@ public class PriceHeader implements Serializable{
 
 	@Override
 	public String toString() {
-		return "PriceHeader [id=" + id + ", description=" + description + ", startDate=" + startDate + ", endDate="
-				+ endDate + ", status=" + status + ", createUser=" + createUser + "]";
+		return "PriceHeader [id=" + id + ", name=" + name + ", description=" + description + ", startDate=" + startDate
+				+ ", endDate=" + endDate + ", status=" + status + ", createUser=" + createUser + "]";
 	}
 	
 }

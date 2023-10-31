@@ -46,4 +46,6 @@ public class InventoryHeader implements Serializable{
 	
 	@OneToMany(mappedBy = "inventoryHeader")
 	private List<InventoryDetail> inventoryDetails;
+	
+	
 }

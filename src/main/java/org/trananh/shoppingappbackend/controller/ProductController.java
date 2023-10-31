@@ -2,13 +2,11 @@ package org.trananh.shoppingappbackend.controller;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.trananh.shoppingappbackend.exception.ResourceNotFoundException;
 import org.trananh.shoppingappbackend.model.Product;
-import org.trananh.shoppingappbackend.model.PromotionHeader;
 import org.trananh.shoppingappbackend.model.StructureValue;
 import org.trananh.shoppingappbackend.model.UnitOfMeasure;
 import org.trananh.shoppingappbackend.model.User;
@@ -84,14 +81,15 @@ public class ProductController {
 				for(Product pro : products) {
 					if (mapUnit.get("product_id").toString().trim().equals(pro.getId().trim())) {
 						Map<String, Object> m = new HashMap<String, Object>();
-						Map<String, Object> mCategory = new HashMap<String, Object>();
 						
 						m.put("id", pro.getId().toString().trim());
 						m.put("name", pro.getName().toString().trim());
 						m.put("description", pro.getDescription().toString().trim());
 						m.put("imageUrl", pro.getImageUrl().toString().trim());
 						m.put("category", pro.getCategory().getValue().toString().trim());
-						m.put("baseUnitOfMeasure", mapUnit.get("base_unit_of_measure_id"));
+						m.put("baseUnitOfMeasureId", mapUnit.get("base_unit_of_measure_id"));
+						m.put("baseOfUnitMeasureName", mapUnit.get("value"));
+						m.put("unitOfMeasureId", mapUnit.get("id"));
 						
 						lstMap.add(m);
 					}
@@ -137,6 +135,8 @@ public class ProductController {
     		map.put("imageUrl", pro.getImageUrl().toString().trim());
     		map.put("category", pro.getCategory().getValue().toString().trim());
     		map.put("baseUnitOfMeasure", mapUnit.get("base_unit_of_measure_id"));
+    		map.put("baseOfUnitMeasureName", mapUnit.get("value"));
+    		map.put("unitOfMeasureId", mapUnit.get("id"));
     		
     		lstMap.add(map);
         }
@@ -169,6 +169,8 @@ public class ProductController {
     		map.put("imageUrl", pro.getImageUrl().toString().trim());
     		map.put("category", pro.getCategory().getValue().toString().trim());
     		map.put("baseUnitOfMeasure", mapUnit.get("base_unit_of_measure_id"));
+    		map.put("baseOfUnitMeasureName", mapUnit.get("value"));
+    		map.put("unitOfMeasureId", mapUnit.get("id"));
     		
     		lstMap.add(map);
         }

@@ -2,6 +2,7 @@ package org.trananh.shoppingappbackend.controller;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -24,7 +25,7 @@ public class PromotionHeaderController {
 	private PromotionHeaderRepository promotionHeaderRepository;
 	
 	@GetMapping("/")
-	public MyHttpResponseArray getAll() {
+	public Map<String, Object> getAll() {
 		List<PromotionHeader> promotionHeaders = promotionHeaderRepository.findAll();
 		
 		ArrayList<Object> objects = new ArrayList<Object>();
@@ -32,9 +33,10 @@ public class PromotionHeaderController {
 			objects.add(promotionHeaders.get(i));
 		}
 		if (promotionHeaders!= null && promotionHeaders.size()>0) {
-			return new MyHttpResponseArray(200, "Tìm thành công", objects);
+			
 		}
-		return new MyHttpResponseArray(404, "Không tìm thấy", null);
+		return null;
+			
 	}
 	
 	@GetMapping("/{id}")

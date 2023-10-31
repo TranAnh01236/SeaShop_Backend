@@ -86,5 +86,12 @@ public class PriceDetail implements Serializable{
 		this.priceHeader = priceHeader;
 		this.unitOfMeasure = unitOfMeasure;
 	}
+
+
+	@Override
+	public String toString() {
+		return "PriceDetail [priceHeader=" + priceHeader + ", unitOfMeasure=" + unitOfMeasure + ", price=" + price
+				+ "]";
+	}
 	
 }

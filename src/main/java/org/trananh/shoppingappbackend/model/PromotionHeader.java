@@ -2,6 +2,7 @@ package org.trananh.shoppingappbackend.model;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.annotations.GenericGenerator;
@@ -32,7 +33,10 @@ public class PromotionHeader implements Serializable{
 	@GenericGenerator(name = "promotion_header_id_generator", strategy = "org.trananh.shoppingappbackend.ultilities.idGenerator.PromotionHeaderIdGenerator")
 	private String id;
 	
-	@Column(name = "description", nullable = true)
+	@Column(name = "name", nullable = false, columnDefinition = "nvarchar(max)")
+	private String name;
+	
+	@Column(name = "description", nullable = true, columnDefinition = "nvarchar(max)")
 	private String description;
 	
 	@Column(name = "start_date", nullable = true)
@@ -42,7 +46,7 @@ public class PromotionHeader implements Serializable{
 	private Timestamp endDate;
 	
 	@Column(name = "status", nullable = false)
-	private boolean status = true;
+	private int status = 0;
 	
 	@ManyToOne
 	@JoinColumn(name = "create_user_id")
@@ -50,4 +54,90 @@ public class PromotionHeader implements Serializable{
 	
 	@OneToMany(mappedBy = "promotionHeader")
 	private List<PromotionLine> promotionLines;
+
+	public PromotionHeader() {
+		super();
+	}
+
+	public PromotionHeader(String id) {
+		super();
+		this.id = id;
+	}
+
+	public PromotionHeader(String id, String name, String description, Timestamp startDate, Timestamp endDate,
+			int status, User createUser) {
+		super();
+		this.id = id;
+		this.name = name;
+		this.description = description;
+		this.startDate = startDate;
+		this.endDate = endDate;
+		this.status = status;
+		this.createUser = createUser;
+		this.promotionLines = new ArrayList<PromotionLine>();
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public Timestamp getStartDate() {
+		return startDate;
+	}
+
+	public void setStartDate(Timestamp startDate) {
+		this.startDate = startDate;
+	}
+
+	public Timestamp getEndDate() {
+		return endDate;
+	}
+
+	public void setEndDate(Timestamp endDate) {
+		this.endDate = endDate;
+	}
+
+	public int isStatus() {
+		return status;
+	}
+
+	public void setStatus(int status) {
+		this.status = status;
+	}
+
+	public User getCreateUser() {
+		return createUser;
+	}
+
+	public void setCreateUser(User createUser) {
+		this.createUser = createUser;
+	}
+
+	@Override
+	public String toString() {
+		return "PromotionHeader [id=" + id + ", name=" + name + ", description=" + description + ", startDate="
+				+ startDate + ", endDate=" + endDate + ", status=" + status + ", createUser=" + createUser + "]";
+	}
+	
+	
 }
