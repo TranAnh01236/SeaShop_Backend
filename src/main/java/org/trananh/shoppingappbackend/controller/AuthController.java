@@ -62,7 +62,7 @@ public class AuthController {
         user.setPassword(info.get("password").toString());
         user.setPhoneNumber(info.get("phoneNumber").toString());
         user.setAddressDetail(info.get("addressDetail").toString());
-        user.setType(Integer.parseInt(info.get("type")));
+        user.setType(Integer.parseInt(info.get("type").toString()));
         user.setDayOfBirth(Date.valueOf(info.get("dayOfBirth").toString()));
         user.setEmail(info.get("email").toString());
         user.setGender(Integer.parseInt(info.get("gender").toString()));

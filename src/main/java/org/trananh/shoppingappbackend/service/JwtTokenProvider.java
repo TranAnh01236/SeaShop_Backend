@@ -44,11 +44,11 @@ public class JwtTokenProvider {
         	
         	String id = String.valueOf(claims.getSubject());
         	
-        	System.out.println(id);
+//        	System.out.println(id);
         	
         	User user = userRepository.findById(id.trim()).orElse(null);
         	
-        	System.out.println("User: " + user.toString());
+//        	System.out.println("User: " + user.toString());
         	
         	return user;
         	

@@ -8,7 +8,7 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,7 +26,6 @@ import org.trananh.shoppingappbackend.repository.ProductRepository;
 import org.trananh.shoppingappbackend.repository.UnitOfMeasureRepository;
 import org.trananh.shoppingappbackend.service.AuthService;
 import org.trananh.shoppingappbackend.ultilities.Constants;
-import org.trananh.shoppingappbackend.ultilities.MyHttpResponse;
 import org.trananh.shoppingappbackend.ultilities.MyHttpResponseArray;
 import org.trananh.shoppingappbackend.ultilities.ResponseMap;
 import org.trananh.shoppingappbackend.ultilities.ResponseMapArray;
@@ -145,6 +144,59 @@ public class ProductController {
         return new ResponseMapArray(0, "Successfully", lstMap);
     }
 	
+	@GetMapping("/detail/{id}")
+    public ResponseMap getDetailById(@RequestHeader("token") String token, @PathVariable(value = "id") String gradeId) {
+		
+		User user = authService.verifyToken(token);
+		if (user == null) {
+			return new ResponseMap(401, "Authentication failed", null);
+		}
+		
+		Product product = productRepository.findById(gradeId).orElse(null);
+		
+		if (product == null) {
+			return new ResponseMap(1, "Not Found", null);
+		}
+		
+		Map<String, Object> map = new HashMap<String, Object>();
+		
+		map.put("id", product.getId().toString().trim());
+		map.put("name", product.getName().toString().trim());
+		map.put("description", product.getDescription().toString().trim());
+		map.put("imageUrl", product.getImageUrl().toString().trim());
+		
+		Map<String, Object> mapCategory = new HashMap<String, Object>();
+		mapCategory.put("id", product.getCategory().getId());
+		mapCategory.put("value", product.getCategory().getValue());
+		
+		map.put("category", mapCategory);
+		
+		List<UnitOfMeasure> unitOfMeasures = unitOfMeasureRepository.findByProductId(product.getId().trim());
+		
+		if (unitOfMeasures == null) {
+			unitOfMeasures = new ArrayList<UnitOfMeasure>();
+		}
+		
+		List<Map<String, Object>> lstMap = new ArrayList<Map<String,Object>>();
+		
+		for(UnitOfMeasure u : unitOfMeasures) {
+			
+			Map<String, Object> map1 = new HashMap<String, Object>();
+			
+			map1.put("id", u.getId());
+			map1.put("value", u.getValue());
+			map1.put("imageUrl", u.getImageUrl());
+			map1.put("quantity", u.getQuantity());
+			map1.put("baseOfUnitMeasure", u.getBaseUnitOfMeasure().getId().trim());
+			
+			lstMap.add(map1);
+		}
+		
+		map.put("unitOfMeasures", lstMap);
+		
+		return new ResponseMap(0, "Successfully", map);
+	}
+	
 	@GetMapping("/find/{id}")
     public ResponseMapArray getProduct(@RequestHeader("token") String token, @PathVariable(value = "id") String gradeId)
         throws ResourceNotFoundException {
@@ -179,19 +231,51 @@ public class ProductController {
         return new ResponseMapArray(0, "Successfully", lstMap);
     }
 	
-	@GetMapping("/structure_value_id/{structure_value_id}")
-	public MyHttpResponseArray getByStructureValue(@PathVariable(value = "structure_value_id") String structureValueId) {
+	@GetMapping("/category/{category}")
+	public Map<String, Object> getByCategory(@RequestHeader("token") String token, @PathVariable(value = "category") String structureValueId) {
+		
+		User user = authService.verifyToken(token);
+		if (user == null) {
+			return new ResponseMap(401, "Authentication failed", null);
+		}
+		
 		List<Product> products = productRepository.findByStructurevalue(structureValueId);
 		
-		ArrayList<Object> objects = new ArrayList<Object>();
-		for(int i = 0; i < products.size(); i++) {
-			objects.add(products.get(i));
+		List<Map<String, Object>> lstUnit = unitOfMeasureRepository.findAllProduct();
+		
+		if (products!= null) {
+			
+			List<Map<String , Object>> lstMap = new ArrayList<Map<String,Object>>();
+			
+			for(Map<String, Object> mapUnit : lstUnit) {
+				
+				for(Product pro : products) {
+					if (mapUnit.get("product_id").toString().trim().equals(pro.getId().trim())) {
+						Map<String, Object> m = new HashMap<String, Object>();
+						
+						m.put("id", pro.getId().toString().trim());
+						m.put("name", pro.getName().toString().trim());
+						m.put("description", pro.getDescription().toString().trim());
+						m.put("imageUrl", pro.getImageUrl().toString().trim());
+						m.put("category", pro.getCategory().getValue().toString().trim());
+						m.put("baseUnitOfMeasureId", mapUnit.get("base_unit_of_measure_id"));
+						m.put("baseOfUnitMeasureName", mapUnit.get("value"));
+						m.put("unitOfMeasureId", mapUnit.get("id"));
+						
+						lstMap.add(m);
+					}
+				}
+				
+			}
+			
+			return new ResponseMapArray(0, "Successfully", lstMap);
+			
 		}
-		if (products!= null && products.size()>0) {
-			return new MyHttpResponseArray(200, "Tìm thành công", objects);
-		}
-		return new MyHttpResponseArray(404, "Không tìm thấy", null);
+		
+		return new ResponseMapArray(1, "Failed", null);
 	}
+	
+	
 	
 	@PostMapping("/")
     public Map<String, Object> createProduct(@RequestHeader("token") String token, @Validated @RequestBody Map<String, Object> map) {
@@ -206,11 +290,16 @@ public class ProductController {
     	product.setName(map.get("name").toString().trim());
     	product.setDescription(map.get("description").toString().trim());
     	product.setImageUrl(map.get("imageUrl").toString().trim());
-    	product.setCreateUser(new User(map.get("createUser").toString().trim()));
     	product.setCategory(new StructureValue(map.get("category").toString().trim()));
     	product.setCreateUser(user);
-    	String json = Constants.gson.toJson(map.get("unitOfMeasure"));
+    	String json = Constants.gson.toJson(map.get("unitOfMeasures"));
     	List<UnitOfMeasure> unitOfMeasures = Constants.gson.fromJson(json, new TypeToken<List<UnitOfMeasure>>(){}.getType());
+    	
+//    	System.out.println(product.toString());
+//    	
+//    	for(UnitOfMeasure u : unitOfMeasures) {
+//    		System.out.println(u.toString());
+//    	}
     	
     	Product product1 = productRepository.findById(product.getId().trim()).orElse(null);
     	if (product1 != null) {
@@ -227,21 +316,165 @@ public class ProductController {
     		unitOfMeasureRepository.save(u);
     	}
     	
-    	return new ResponseMap(0, "Successfully", null);
+    	Map<String, Object> mapp = new HashMap<String, Object>();
+		
+		mapp.put("id", product2.getId().toString().trim());
+		mapp.put("name", product2.getName().toString().trim());
+		mapp.put("description", product2.getDescription().toString().trim());
+		mapp.put("imageUrl", product2.getImageUrl().toString().trim());
+		
+		Map<String, Object> mapCategory = new HashMap<String, Object>();
+		mapCategory.put("id", product2.getCategory().getId());
+		mapCategory.put("value", product2.getCategory().getValue());
+		
+		mapp.put("category", mapCategory);
+		
+		List<UnitOfMeasure> unitOfMeasuress = unitOfMeasureRepository.findByProductId(product2.getId().trim());
+		
+		if (unitOfMeasuress == null) {
+			unitOfMeasuress = new ArrayList<UnitOfMeasure>();
+		}
+		
+		List<Map<String, Object>> lstMap = new ArrayList<Map<String,Object>>();
+		
+		for(UnitOfMeasure u : unitOfMeasuress) {
+			
+			Map<String, Object> map1 = new HashMap<String, Object>();
+			
+			map1.put("id", u.getId());
+			map1.put("value", u.getValue());
+			map1.put("imageUrl", u.getImageUrl());
+			map1.put("quantity", u.getQuantity());
+			map1.put("baseOfUnitMeasure", u.getBaseUnitOfMeasure().getId().trim());
+			
+			lstMap.add(map1);
+		}
+		
+		mapp.put("unitOfMeasures", lstMap);
+    	
+    	return new ResponseMap(0, "Successfully", mapp);
     	
     }
 	
 	@PutMapping("/")
-	public MyHttpResponse update(@Validated @RequestBody Product product) {
-		Product product1 = productRepository.findById(product.getId().trim()).orElse(null);
-		if (product1 == null) {
-			return new MyHttpResponse(404, "Không tìm thấy sản phẩm", null);
-		}
-		Product product2 = productRepository.save(product);
-		if (product2 == null) {
-    		return new MyHttpResponse(404, "Cập nhật không thành công", null);
+	public Map<String, Object> update(@RequestHeader("token") String token, @Validated @RequestBody Map<String, Object> map) {
+		
+		User user = authService.verifyToken(token);
+		if (user == null) {
+			return new ResponseMap(401, "Authentication failed", null);
 		}
 		
-        return new MyHttpResponse(200, "Cập nhật thành công" , product1);
+    	Product product = new Product();
+    	product.setId(map.get("id").toString().trim());
+    	product.setName(map.get("name").toString().trim());
+    	product.setDescription(map.get("description").toString().trim());
+    	product.setImageUrl(map.get("imageUrl").toString().trim());
+    	product.setCategory(new StructureValue(map.get("category").toString().trim()));
+    	product.setCreateUser(user);
+    	String json = Constants.gson.toJson(map.get("unitOfMeasures"));
+    	List<UnitOfMeasure> unitOfMeasures = Constants.gson.fromJson(json, new TypeToken<List<UnitOfMeasure>>(){}.getType());
+    	
+//    	System.out.println(product.toString());
+//    	
+//    	for(UnitOfMeasure u : unitOfMeasures) {
+//    		System.out.println(u.toString());
+//    	}
+    	
+    	Product product1 = productRepository.findById(product.getId().trim()).orElse(null);
+    	if (product1 == null) {
+			return new ResponseMap(1, "Not Found Product Id", null);
+		}
+    	
+    	List<UnitOfMeasure> lstUnit = unitOfMeasureRepository.findByProductId(product1.getId().trim());
+    	if (lstUnit == null) {
+			lstUnit = new ArrayList<UnitOfMeasure>();
+		}
+    	
+    	for(UnitOfMeasure u : lstUnit) {
+    		
+    		for(int i = 0; i < unitOfMeasures.size(); i++) {
+    			if (unitOfMeasures.get(i).getId() == u.getId()) {
+					
+				}
+    		}
+    		
+    	}
+    	
+//    	for(UnitOfMeasure u : unitOfMeasures) {
+//    		u.setProduct(new Product(product2.getId()));
+//    		unitOfMeasureRepository.sa
+//    	}
+    			
+		Product product2 = productRepository.save(product);
+    	if (product2 == null) {
+    		return new ResponseMap(2, "Failed", null);
+		}		
+    	
+    	Map<String, Object> mapp = new HashMap<String, Object>();
+		
+		mapp.put("id", product2.getId().toString().trim());
+		mapp.put("name", product2.getName().toString().trim());
+		mapp.put("description", product2.getDescription().toString().trim());
+		mapp.put("imageUrl", product2.getImageUrl().toString().trim());
+		
+		Map<String, Object> mapCategory = new HashMap<String, Object>();
+		mapCategory.put("id", product2.getCategory().getId());
+		mapCategory.put("value", product2.getCategory().getValue());
+		
+		mapp.put("category", mapCategory);
+		
+		List<UnitOfMeasure> unitOfMeasuress = unitOfMeasureRepository.findByProductId(product2.getId().trim());
+		
+		if (unitOfMeasuress == null) {
+			unitOfMeasuress = new ArrayList<UnitOfMeasure>();
+		}
+		
+		List<Map<String, Object>> lstMap = new ArrayList<Map<String,Object>>();
+		
+		for(UnitOfMeasure u : unitOfMeasuress) {
+			
+			Map<String, Object> map1 = new HashMap<String, Object>();
+			
+			map1.put("id", u.getId());
+			map1.put("value", u.getValue());
+			map1.put("imageUrl", u.getImageUrl());
+			map1.put("quantity", u.getQuantity());
+			map1.put("baseOfUnitMeasure", u.getBaseUnitOfMeasure().getId().trim());
+			
+			lstMap.add(map1);
+		}
+		
+		mapp.put("unitOfMeasures", lstMap);
+    	
+    	return new ResponseMap(0, "Update Successfully", mapp);
+    	
 	}
+	
+	@DeleteMapping("/{id}")
+	public ResponseMap delete(@RequestHeader("token") String token, @PathVariable(value = "id") String id) {
+		
+		User user = authService.verifyToken(token);
+		if (user == null) {
+			return new ResponseMap(401, "Authentication failed", null);
+		}
+		
+		
+		Product product = productRepository.findById(id).orElse(null);
+		
+		if (product == null) {
+			return new ResponseMap(1, "Not found id", null);
+		}
+		
+		List<UnitOfMeasure> lstUnit = unitOfMeasureRepository.findByProductId(product.getId().trim());
+		
+		for(UnitOfMeasure u : lstUnit) {
+			unitOfMeasureRepository.delete(u);
+		}
+		
+		productRepository.delete(product);
+		
+		return new ResponseMap(0, "Delete Successfully", null);
+		
+	}
+	
 }
