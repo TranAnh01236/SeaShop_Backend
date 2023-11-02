@@ -1,5 +1,7 @@
 package org.trananh.shoppingappbackend.controller;
 
+import java.sql.Date;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -8,7 +10,6 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,8 +30,6 @@ import org.trananh.shoppingappbackend.ultilities.MyHttpResponse;
 import org.trananh.shoppingappbackend.ultilities.ResponseMap;
 import org.trananh.shoppingappbackend.ultilities.ResponseMapArray;
 
-import com.google.gson.reflect.TypeToken;
-
 @RestController
 @RequestMapping("/price_header")
 public class PriceHeaderController {
@@ -45,6 +44,9 @@ public class PriceHeaderController {
 	
 	@GetMapping("/")
 	public Map<String, Object> getAll() {
+		
+		updatePrice();
+		
 		List<PriceHeader> priceHeaders = priceHeaderRepository.findAll();
 		if (priceHeaders == null) {
 			return new ResponseMapArray(1, "Failed", null);
@@ -78,45 +80,150 @@ public class PriceHeaderController {
         return new MyHttpResponse(200, "Tìm thành công", priceHeader);
     }
 	
+	@GetMapping("/detail/{id}")
+    public Map<String, Object> getDetailById(@PathVariable(value = "id") String id)
+        throws ResourceNotFoundException {
+		
+		updatePrice();
+		
+        PriceHeader priceHeader = priceHeaderRepository.findById(id).orElse(null);
+        if (priceHeader == null) {
+			new ResponseMap(1, "Not Found Id", null);
+		}
+        
+        List<PriceDetail> lstPriceDetails = priceDetailRepository.findByHeaderId(id);
+        
+        if (lstPriceDetails == null) {
+        	lstPriceDetails = new ArrayList<PriceDetail>();
+        }
+        
+        Map<String, Object> rsMap = new HashMap<String, Object>();
+        
+        rsMap.put("id", priceHeader.getId().trim());
+        rsMap.put("name", priceHeader.getName().trim());
+        rsMap.put("startDate", priceHeader.getStartDate());
+        rsMap.put("endDate", priceHeader.getEndDate());
+		rsMap.put("status", String.valueOf(priceHeader.getStatus()));
+		rsMap.put("description", priceHeader.getDescription().trim());
+		
+		List<Map<String, Object>> lstMapDetails = new ArrayList<Map<String,Object>>();
+		
+		for(PriceDetail p : lstPriceDetails) {
+			
+			Map<String, Object> m = new HashMap<String, Object>();
+			
+			m.put("priceHeaderId", p.getPriceHeader().getId().trim());
+			m.put("unitOfMeasureId", p.getUnitOfMeasure().getId());
+			m.put("price", p.getPrice());
+			
+			lstMapDetails.add(m);
+			
+		}
+		
+		rsMap.put("priceDetails", lstMapDetails);
+		
+		return new ResponseMap(0, "Successfully", rsMap);
+        
+    }
 	
 	@PostMapping("/")
-    public ResponseMap create(@RequestHeader("token") String token, @Validated @RequestBody Map<String, Object> map) {
+    public Map<String, Object> create(@RequestHeader("token") String token, @Validated @RequestBody Map<String, Object> map) {
 		
 		User user = authService.verifyToken(token);
 		if (user == null) {
 			return new ResponseMap(401, "Authentication failed", null);
 		}
 		
-		PriceHeader priceHeader = new PriceHeader();
-		priceHeader.setName(map.get("name").toString().trim());
-		priceHeader.setDescription(map.get("description").toString().trim());
-		priceHeader.setCreateUser(new User(user.getId().trim()));
+		PriceHeader header = new PriceHeader();
+		header.setName(map.get("name").toString().trim());
+		header.setDescription(map.get("description").toString().trim());
+		header.setStartDate(Date.valueOf(map.get("startDate").toString()));
+		header.setEndDate(Date.valueOf(map.get("endDate").toString()));
+		header.setCreateUser(user);
 		
+		List<PriceDetail> priceDetails = new ArrayList<PriceDetail>();
 		String json = Constants.gson.toJson(map.get("priceDetails"));
-    	List<PriceDetail> priceDetails = Constants.gson.fromJson(json, new TypeToken<List<PriceDetail>>(){}.getType());
+		List<Map<String, Object>> lstDetailsMap = Constants.gson.fromJson(json, ArrayList.class);
+		for(Map<String, Object> m : lstDetailsMap) {
+			
+			PriceDetail p = new PriceDetail();
+			p.setPrice(Double.parseDouble(m.get("price").toString()));
+			p.setUnitOfMeasure(new UnitOfMeasure((int)Double.parseDouble(m.get("unitOfMeasureId").toString())));
+			p.setPriceHeader(header);
+			
+			priceDetails.add(p);
+		}
 		
-		System.out.println(priceHeader.toString());
+		if (header.getStartDate() != null 
+				&& header.getEndDate() != null 
+				&& Date.valueOf(LocalDate.now()).compareTo(header.getStartDate()) >= 0 
+				&& Date.valueOf(LocalDate.now()).compareTo(header.getEndDate()) < 0 ) {
+			header.setStatus(1);
+		}else {
+			header.setStatus(0);
+		}
 		
-		PriceHeader priceHeader1 = priceHeaderRepository.save(priceHeader);
-		if (priceHeader1 == null) {
+		PriceHeader priceHeader = priceHeaderRepository.save(header);
+		if (priceHeader == null) {
 			return new ResponseMap(1, "Failed", null);
 		}
+		for(PriceDetail detail : priceDetails) {
+			priceDetailRepository.save(detail);
+		}
 		
-		System.out.println(priceHeader1.getId().trim());
+        
+        List<PriceDetail> lstPriceDetails = priceDetailRepository.findByHeaderId(priceHeader.getId().trim());
+        
+        if (lstPriceDetails == null) {
+        	lstPriceDetails = new ArrayList<PriceDetail>();
+        }
+        
+        Map<String, Object> rsMap = new HashMap<String, Object>();
+        
+        rsMap.put("id", priceHeader.getId().trim());
+        rsMap.put("name", priceHeader.getName().trim());
+        rsMap.put("startDate", priceHeader.getStartDate());
+        rsMap.put("endDate", priceHeader.getEndDate());
+		rsMap.put("status", String.valueOf(priceHeader.getStatus()));
+		rsMap.put("description", priceHeader.getDescription().trim());
 		
-		for(PriceDetail p : priceDetails) {
+		List<Map<String, Object>> lstMapDetails = new ArrayList<Map<String,Object>>();
+		
+		for(PriceDetail p : lstPriceDetails) {
 			
-			p.setPriceHeader(new PriceHeader(priceHeader1.getId().trim()));
+			Map<String, Object> m = new HashMap<String, Object>();
 			
-			PriceDetail pd = priceDetailRepository.save(p);
+			m.put("priceHeaderId", p.getPriceHeader().getId().trim());
+			m.put("unitOfMeasureId", p.getUnitOfMeasure().getId());
+			m.put("price", p.getPrice());
 			
-			if (p == null) {
-				return new ResponseMap(1, "Failed", null);
-			}
+			lstMapDetails.add(m);
 			
 		}
 		
-		return null;
+		rsMap.put("priceDetails", lstMapDetails);
+		
+		return new ResponseMap(0, "Successfully", rsMap);
 		
     }
+	
+	private void updatePrice() {
+		
+		List<PriceHeader> list = priceHeaderRepository.findAll();
+		
+		for(PriceHeader header : list) {
+			if (header.getStartDate() != null 
+					&& header.getEndDate() != null 
+					&& Date.valueOf(LocalDate.now()).compareTo(header.getStartDate()) >= 0 
+					&& Date.valueOf(LocalDate.now()).compareTo(header.getEndDate()) < 0 ) {
+				header.setStatus(1);
+				priceHeaderRepository.save(header);
+			}else {
+				header.setStatus(0);
+				priceHeaderRepository.save(header);
+			}
+		}
+		
+	}
+	
 }

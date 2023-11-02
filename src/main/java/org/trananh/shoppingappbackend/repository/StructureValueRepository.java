@@ -15,4 +15,7 @@ public interface StructureValueRepository extends JpaRepository<StructureValue, 
 	
 	@Query(value = "select * from structure_values where type = ?1 and level = ?2", nativeQuery=true)
 	List<StructureValue> findByTypeAndLevel(int type, int level);
+	
+	@Query(value = "select * from structure_values where type = ?1 order by level DESC", nativeQuery=true)
+	List<StructureValue> findAllByTypeDESCLevel(int type);
 }

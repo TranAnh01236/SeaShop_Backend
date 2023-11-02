@@ -15,9 +15,9 @@ public interface UnitOfMeasureRepository extends JpaRepository<UnitOfMeasure, Un
 	@Query(value = "select * from unit_of_measures where product_id = ?1", nativeQuery=true)
 	List<UnitOfMeasure> findByProductId(String productId);
 	
-	@Query(value = "select u.id, u.product_id, u.base_unit_of_measure_id, b.value from unit_of_measures u inner join base_unit_of_measures b on u.base_unit_of_measure_id = b.id where u.quantity = 1", nativeQuery=true)
+	@Query(value = "select u.id, u.product_id, u.base_unit_of_measure_id, b.value, u.image_url from unit_of_measures u inner join base_unit_of_measures b on u.base_unit_of_measure_id = b.id where u.quantity = 1", nativeQuery=true)
 	List<Map<String, Object>> findAllProduct();
 	
-	@Query(value = "select u.id, u.product_id, u.base_unit_of_measure_id, b.value from unit_of_measures u inner join base_unit_of_measures b on u.base_unit_of_measure_id = b.id where u.quantity = 1 and u.product_id = ?1", nativeQuery=true)
+	@Query(value = "select u.id, u.product_id, u.base_unit_of_measure_id, b.value, u.image_url from unit_of_measures u inner join base_unit_of_measures b on u.base_unit_of_measure_id = b.id where u.quantity = 1 and u.product_id = ?1", nativeQuery=true)
 	List<Map<String, Object>> findAllProductById(String productId);
 }

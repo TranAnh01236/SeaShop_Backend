@@ -128,5 +128,13 @@ public class StructureValue {
 		this.users = new ArrayList<User>();
 		this.products = new ArrayList<Product>();
 	}
+
+	@Override
+	public String toString() {
+		return "StructureValue [id=" + id + ", value=" + value + ", level=" + level + ", parentId=" + parentId
+				+ ", description=" + description + ", imageUrl=" + imageUrl + ", type=" + type + "]";
+	}
+	
+	
 	
 }

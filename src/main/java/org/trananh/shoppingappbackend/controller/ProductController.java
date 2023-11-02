@@ -2,6 +2,7 @@ package org.trananh.shoppingappbackend.controller;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -18,11 +19,16 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.trananh.shoppingappbackend.exception.ResourceNotFoundException;
+import org.trananh.shoppingappbackend.model.PriceDetail;
+import org.trananh.shoppingappbackend.model.PriceHeader;
 import org.trananh.shoppingappbackend.model.Product;
 import org.trananh.shoppingappbackend.model.StructureValue;
 import org.trananh.shoppingappbackend.model.UnitOfMeasure;
 import org.trananh.shoppingappbackend.model.User;
+import org.trananh.shoppingappbackend.repository.PriceDetailRepository;
+import org.trananh.shoppingappbackend.repository.PriceHeaderRepository;
 import org.trananh.shoppingappbackend.repository.ProductRepository;
+import org.trananh.shoppingappbackend.repository.StructureValueRepository;
 import org.trananh.shoppingappbackend.repository.UnitOfMeasureRepository;
 import org.trananh.shoppingappbackend.service.AuthService;
 import org.trananh.shoppingappbackend.ultilities.Constants;
@@ -41,35 +47,28 @@ public class ProductController {
 	
 	@Autowired(required = true)
 	private UnitOfMeasureRepository unitOfMeasureRepository;
+
+	@Autowired(required = true)
+	private StructureValueRepository mStructureValueRepository;
+	
+	@Autowired(required = true)
+	private PriceHeaderRepository mPriceHeaderRepository;
+	
+	@Autowired(required = true)
+	private PriceDetailRepository mPriceDetailRepository;
 	
 	@Autowired(required = true)
 	private AuthService authService;
 	
-	@GetMapping("/all")
-	public MyHttpResponseArray getAll() {
-		List<Product> products = productRepository.findAll();
-		
-		ArrayList<Object> objects = new ArrayList<Object>();
-		for(int i = 0; i < products.size(); i++) {
-			objects.add(products.get(i));
-		}
-		if (products!= null && products.size()>0) {
-			return new MyHttpResponseArray(200, "Tìm thành công", objects);
-		}
-		return new MyHttpResponseArray(404, "Không tìm thấy", null);
-	}
-	
 	@GetMapping("/")
-	public ResponseMapArray getAllproduct(@RequestHeader("token") String token ) {
-		
-		User user = authService.verifyToken(token);
-		if (user == null) {
-			return new ResponseMapArray(401, "Authentication failed", null);
-		}
+	public ResponseMapArray getAllproduct() {
 		
 		List<Product> products = productRepository.findAll();
 		
 		List<Map<String, Object>> lstUnit = unitOfMeasureRepository.findAllProduct();
+		
+		List<PriceHeader> priceHeaders = mPriceHeaderRepository.findAllStatusTrue();
+		List<PriceDetail> priceDetails = mPriceDetailRepository.findAll();
 		
 		
 		if (products!= null) {
@@ -90,6 +89,10 @@ public class ProductController {
 						m.put("baseUnitOfMeasureId", mapUnit.get("base_unit_of_measure_id"));
 						m.put("baseOfUnitMeasureName", mapUnit.get("value"));
 						m.put("unitOfMeasureId", mapUnit.get("id"));
+						m.put("baseUnitOfMeasureImageUrl", mapUnit.get("image_url"));
+						m.put("categoryId", pro.getCategory().getId());
+						
+						m.put("price", getPrice(priceDetails, priceHeaders, Integer.parseInt(mapUnit.get("id").toString())));
 						
 						lstMap.add(m);
 					}
@@ -125,6 +128,9 @@ public class ProductController {
         
         List<Map<String, Object>> lstUnit = unitOfMeasureRepository.findAllProductById(pro.getId().trim());
         
+        List<PriceHeader> priceHeaders = mPriceHeaderRepository.findAllStatusTrue();
+		List<PriceDetail> priceDetails = mPriceDetailRepository.findAll();
+        
         for(Map<String, Object> mapUnit : lstUnit) {
         	
         	Map<String, Object> map = new HashMap<String, Object>();
@@ -138,6 +144,8 @@ public class ProductController {
     		map.put("baseOfUnitMeasureName", mapUnit.get("value"));
     		map.put("unitOfMeasureId", mapUnit.get("id"));
     		
+    		map.put("price", getPrice(priceDetails, priceHeaders, Integer.parseInt(mapUnit.get("id").toString())));
+    		
     		lstMap.add(map);
         }
         
@@ -145,18 +153,16 @@ public class ProductController {
     }
 	
 	@GetMapping("/detail/{id}")
-    public ResponseMap getDetailById(@RequestHeader("token") String token, @PathVariable(value = "id") String gradeId) {
-		
-		User user = authService.verifyToken(token);
-		if (user == null) {
-			return new ResponseMap(401, "Authentication failed", null);
-		}
+    public ResponseMap getDetailById(@PathVariable(value = "id") String gradeId) {
 		
 		Product product = productRepository.findById(gradeId).orElse(null);
 		
 		if (product == null) {
 			return new ResponseMap(1, "Not Found", null);
 		}
+		
+		List<PriceHeader> priceHeaders = mPriceHeaderRepository.findAllStatusTrue();
+		List<PriceDetail> priceDetails = mPriceDetailRepository.findAll();
 		
 		Map<String, Object> map = new HashMap<String, Object>();
 		
@@ -188,6 +194,7 @@ public class ProductController {
 			map1.put("imageUrl", u.getImageUrl());
 			map1.put("quantity", u.getQuantity());
 			map1.put("baseOfUnitMeasure", u.getBaseUnitOfMeasure().getId().trim());
+			map1.put("price", getPrice(priceDetails, priceHeaders, u.getId()));
 			
 			lstMap.add(map1);
 		}
@@ -232,16 +239,65 @@ public class ProductController {
     }
 	
 	@GetMapping("/category/{category}")
-	public Map<String, Object> getByCategory(@RequestHeader("token") String token, @PathVariable(value = "category") String structureValueId) {
-		
-		User user = authService.verifyToken(token);
-		if (user == null) {
-			return new ResponseMap(401, "Authentication failed", null);
+	public Map<String, Object> getByCategory(@PathVariable(value = "category") String structureValueId) {
+		List<StructureValue> allCategory = mStructureValueRepository.findAllByTypeDESCLevel(2);
+		StructureValue structureValue = mStructureValueRepository.findById(structureValueId).orElse(null);
+		if (structureValue == null) {
+			return new ResponseMapArray(1, "Not Found Category", null);
 		}
 		
-		List<Product> products = productRepository.findByStructurevalue(structureValueId);
+		List<StructureValue> categories = new ArrayList<StructureValue>();
 		
+		int level = structureValue.getLevel() + 1;
+		List<String> lstParentId = new ArrayList<String>();
+		lstParentId.add(structureValue.getId().trim());
+		categories.add(structureValue);
+		
+		System.out.println(allCategory.get(0).getLevel());
+		
+		while (level <= allCategory.get(0).getLevel()) {
+			
+			for(String parentId : lstParentId) {
+				for(StructureValue t : allCategory) {
+					if (t.getLevel() == level && t.getParentId().equals(parentId)) {
+						categories.add(t);
+					}
+				}
+			}
+			
+			lstParentId = new ArrayList<String>();
+			for(StructureValue t : categories) {
+				if (t.getLevel() == level) {
+					lstParentId.add(t.getId().trim());
+				}
+			}
+			System.out.println(level);
+			level++;
+		}
+		
+		for(StructureValue t : categories) {
+			System.out.println(t.toString());
+		}
+		
+		List<Product> products = new ArrayList<Product>();
+		
+		for (StructureValue t : categories) {
+			List<Product> lst = productRepository.findByStructurevalue(t.getId());
+			if (lst != null && lst.size() > 0) {
+				for(Product p : lst) {
+					products.add(p);
+				}
+			}
+		}
+		
+//		return null;
+		
+//		List<Product> products = productRepository.findByStructurevalue(structureValueId);
+//		
 		List<Map<String, Object>> lstUnit = unitOfMeasureRepository.findAllProduct();
+		
+		List<PriceHeader> priceHeaders = mPriceHeaderRepository.findAllStatusTrue();
+		List<PriceDetail> priceDetails = mPriceDetailRepository.findAll();
 		
 		if (products!= null) {
 			
@@ -258,9 +314,12 @@ public class ProductController {
 						m.put("description", pro.getDescription().toString().trim());
 						m.put("imageUrl", pro.getImageUrl().toString().trim());
 						m.put("category", pro.getCategory().getValue().toString().trim());
+						m.put("categoryId", pro.getCategory().getId().toString().trim());
 						m.put("baseUnitOfMeasureId", mapUnit.get("base_unit_of_measure_id"));
 						m.put("baseOfUnitMeasureName", mapUnit.get("value"));
 						m.put("unitOfMeasureId", mapUnit.get("id"));
+						m.put("baseUnitOfMeasureImageUrl", mapUnit.get("image_url"));
+						m.put("price", getPrice(priceDetails, priceHeaders, Integer.parseInt(mapUnit.get("id").toString())));
 						
 						lstMap.add(m);
 					}
@@ -274,8 +333,6 @@ public class ProductController {
 		
 		return new ResponseMapArray(1, "Failed", null);
 	}
-	
-	
 	
 	@PostMapping("/")
     public Map<String, Object> createProduct(@RequestHeader("token") String token, @Validated @RequestBody Map<String, Object> map) {
@@ -475,6 +532,18 @@ public class ProductController {
 		
 		return new ResponseMap(0, "Delete Successfully", null);
 		
+	}
+	
+	private Double getPrice(List<PriceDetail> priceDetails, List<PriceHeader> priceHeaders, int unitId) {
+		for(PriceHeader priceHeader: priceHeaders) {
+			for(PriceDetail priceDetail : priceDetails) {
+				if ( priceDetail.getPriceHeader().getId().trim().equals(priceHeader.getId()) 
+						&& priceDetail.getUnitOfMeasure().getId() == unitId) {
+					return priceDetail.getPrice();
+				}
+			}
+		}
+		return null;
 	}
 	
 }

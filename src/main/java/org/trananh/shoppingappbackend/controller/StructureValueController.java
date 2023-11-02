@@ -176,12 +176,7 @@ public class StructureValueController {
 	//--------------------------------------------------Category------------------------------------------------------------------------
 	
 	@GetMapping("/category/")
-	public ResponseMapArray getAll(@RequestHeader("token") String token) {
-		
-		User user = authService.verifyToken(token);
-		if (user == null) {
-			return new ResponseMapArray(401, "Authentication failed", null);
-		}
+	public ResponseMapArray getAllCategory() {
 		
 		List<StructureValue> lst = structureValueRepository.findByType(2);
 		
@@ -206,7 +201,7 @@ public class StructureValueController {
 			m.put("value", t.getValue().trim());
 			m.put("imageUrl", t.getImageUrl().trim());
 			m.put("description", t.getDescription());
-			
+			m.put("level", t.getLevel());		
 			lstMap.add(m);
 		}
 		
@@ -214,12 +209,7 @@ public class StructureValueController {
 	}
 	
 	@GetMapping("/category/level/{level}")
-	public ResponseMapArray getProductTypeByLevel(@RequestHeader("token") String token, @PathVariable(value = "level") int level){
-		
-		User user = authService.verifyToken(token);
-		if (user == null) {
-			return new ResponseMapArray(401, "Authentication failed", null);
-		}
+	public ResponseMapArray getProductTypeByLevel(@PathVariable(value = "level") int level){
 		
 		List<StructureValue> lstStructureValues = structureValueRepository.findByTypeAndLevel(2, level);
 		
@@ -240,6 +230,7 @@ public class StructureValueController {
 				m.put("value", str.getValue().trim());
 				m.put("imageUrl", str.getImageUrl().trim());
 				m.put("description", str.getDescription());
+				m.put("level", str.getLevel());	
 				
 				map.add(m);
 			}
@@ -251,12 +242,7 @@ public class StructureValueController {
 	}
 	
 	@GetMapping("/category/parent_id/{parent_id}")
-	public ResponseMapArray getCategoryByParentId(@RequestHeader("token") String token, @PathVariable(value = "parent_id") String parentId){
-		
-		User user = authService.verifyToken(token);
-		if (user == null) {
-			return new ResponseMapArray(401, "Authentication failed", null);
-		}
+	public ResponseMapArray getCategoryByParentId(@PathVariable(value = "parent_id") String parentId){
 		
 		List<StructureValue> lstStructureValues = structureValueRepository.findByparentId(parentId.trim());
 		
@@ -277,6 +263,7 @@ public class StructureValueController {
 				m.put("value", str.getValue().trim());
 				m.put("imageUrl", str.getImageUrl().trim());
 				m.put("description", str.getDescription());
+				m.put("level", str.getLevel());	
 				
 				map.add(m);
 			}

@@ -13,7 +13,11 @@ public class AuthService {
 	private JwtTokenProvider jwtTokenProvider;
 	
 	public User verifyToken(String token) {
-		token = token.substring(7);
+		try {
+			token = token.substring(7);
+		} catch (Exception e) {
+			return null;
+		}
 		if (token == null || token.equals("")) {
 			return null;
 		}
