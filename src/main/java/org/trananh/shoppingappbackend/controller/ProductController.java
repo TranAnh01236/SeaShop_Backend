@@ -238,6 +238,52 @@ public class ProductController {
         return new ResponseMapArray(0, "Successfully", lstMap);
     }
 	
+	@GetMapping("/search/{keySearch}")
+	public Map<String, Object> search(@PathVariable(value = "keySearch") String keySearch){
+		
+		List<Product> products = productRepository.findAll();
+		
+		List<Map<String, Object>> lstUnit = productRepository.fullTextSearch(keySearch);
+		
+		List<PriceHeader> priceHeaders = mPriceHeaderRepository.findAllStatusTrue();
+		List<PriceDetail> priceDetails = mPriceDetailRepository.findAll();
+		
+		if (products!= null) {
+			
+			List<Map<String , Object>> lstMap = new ArrayList<Map<String,Object>>();
+			
+			for(Map<String, Object> mapUnit : lstUnit) {
+				
+				for(Product pro : products) {
+					if (mapUnit.get("product_id").toString().trim().equals(pro.getId().trim())) {
+						Map<String, Object> m = new HashMap<String, Object>();
+						
+						m.put("id", pro.getId().toString().trim());
+						m.put("name", pro.getName().toString().trim());
+						m.put("description", pro.getDescription().toString().trim());
+						m.put("imageUrl", pro.getImageUrl().toString().trim());
+						m.put("category", pro.getCategory().getValue().toString().trim());
+						m.put("baseUnitOfMeasureId", mapUnit.get("base_unit_of_measure_id"));
+						m.put("baseOfUnitMeasureName", mapUnit.get("value"));
+						m.put("unitOfMeasureId", mapUnit.get("id"));
+						m.put("baseUnitOfMeasureImageUrl", mapUnit.get("image_url"));
+						m.put("categoryId", pro.getCategory().getId());
+						
+						m.put("price", getPrice(priceDetails, priceHeaders, Integer.parseInt(mapUnit.get("id").toString())));
+						
+						lstMap.add(m);
+					}
+				}
+				
+			}
+			
+			return new ResponseMapArray(0, "Successfully", lstMap);
+			
+		}
+		
+		return new ResponseMapArray(1, "Failed", null);
+	}
+	
 	@GetMapping("/category/{category}")
 	public Map<String, Object> getByCategory(@PathVariable(value = "category") String structureValueId) {
 		List<StructureValue> allCategory = mStructureValueRepository.findAllByTypeDESCLevel(2);

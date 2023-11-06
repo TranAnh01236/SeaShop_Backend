@@ -21,7 +21,6 @@ public class AuthService {
 		if (token == null || token.equals("")) {
 			return null;
 		}
-		System.out.println(token);
 		User user = jwtTokenProvider.getUserIdFromJWT(token);
 		return user;
 	}

@@ -2,6 +2,8 @@ package org.trananh.shoppingappbackend.model;
 
 import java.io.Serializable;
 
+import org.hibernate.annotations.GenericGenerator;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Column;
@@ -24,7 +26,8 @@ public class Cart implements Serializable{
 	private static final long serialVersionUID = 1L;
 	
 	@Id
-	@GeneratedValue(strategy=GenerationType.AUTO)
+	@GeneratedValue(generator = "cart_id_generator")
+	@GenericGenerator(name = "cart_id_generator", strategy = "org.trananh.shoppingappbackend.ultilities.idGenerator.CartIdGenerator")
 	private int id;
 	
 	@ManyToOne

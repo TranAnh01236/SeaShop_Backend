@@ -2,13 +2,11 @@ package org.trananh.shoppingappbackend.controller;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,10 +20,12 @@ import org.trananh.shoppingappbackend.exception.ResourceNotFoundException;
 import org.trananh.shoppingappbackend.model.Cart;
 import org.trananh.shoppingappbackend.model.PriceDetail;
 import org.trananh.shoppingappbackend.model.PriceHeader;
+import org.trananh.shoppingappbackend.model.UnitOfMeasure;
 import org.trananh.shoppingappbackend.model.User;
 import org.trananh.shoppingappbackend.repository.CartRepository;
 import org.trananh.shoppingappbackend.repository.PriceDetailRepository;
 import org.trananh.shoppingappbackend.repository.PriceHeaderRepository;
+import org.trananh.shoppingappbackend.repository.UnitOfMeasureRepository;
 import org.trananh.shoppingappbackend.service.AuthService;
 import org.trananh.shoppingappbackend.ultilities.MyHttpResponse;
 import org.trananh.shoppingappbackend.ultilities.MyHttpResponseArray;
@@ -44,6 +44,8 @@ public class CartController {
 	private PriceHeaderRepository mPriceHeaderRepository;
 	@Autowired(required = true)
 	private PriceDetailRepository mPriceDetailRepository;
+	@Autowired(required = true)
+	private UnitOfMeasureRepository mUnitOfMeasureRepository;
 	
 	@GetMapping("/")
 	public Map<String, Object> getAll(@RequestHeader("token") String token) {
@@ -160,29 +162,51 @@ public class CartController {
 	}
 	
 	@PostMapping("/")
-    public MyHttpResponse create(@Validated @RequestBody Cart cart) {
+    public Map<String, Object> create(@RequestHeader("token") String token, @Validated @RequestBody Map<String, Object> map) {
+		
+		User user = authService.verifyToken(token);
+		if (user == null) {
+			return new ResponseMap(401, "Authentication failed", null);
+		}
     	
-		Cart cart2 = cartRepository.findByUnitAndUser(cart.getUnitOfMeasure().getId(), cart.getUser().getId());
+		Cart cart = new Cart();
+		cart.setUser(user);
+		cart.setUnitOfMeasure(new UnitOfMeasure(Integer.parseInt(map.get("unitOfMeasure").toString())));
+		cart.setQuantity(1);
+		
+		Cart cart2 = new Cart();
+		Cart cart1 = cartRepository.findByUnitAndUser(cart.getUnitOfMeasure().getId(), cart.getUser().getId());
+		
+		Map<String, Object> rsMap = new HashMap<String, Object>();
+		
+		if (cart1 != null) {
+			cart1.setQuantity(cart1.getQuantity() + 1);
+			
+			cart2 = cartRepository.save(cart1);
+		}else {
+			cart2 = cartRepository.save(cart);
+		}
 		
 		if (cart2 == null) {
-			Cart cart1 = cartRepository.save(cart);
-	    	
-	    	if (cart1 == null) {
-	    		return new MyHttpResponse(404, "Thêm không thành công", null);
-			}
-			
-	        return new MyHttpResponse(200, "Thêm thành công" , cart1);
-		}else {
-			cart2.setQuantity(cart2.getQuantity() + 1);
-			
-			Cart cart1 = cartRepository.save(cart2);
-	    	
-	    	if (cart1 == null) {
-	    		return new MyHttpResponse(404, "Thêm không thành công", null);
-			}
-			
-	        return new MyHttpResponse(200, "Thêm thành công" , cart1);
+			return new ResponseMap(1, "Failed", null);
 		}
+		
+		List<PriceHeader> priceHeaders = mPriceHeaderRepository.findAllStatusTrue();
+		List<PriceDetail> priceDetails = mPriceDetailRepository.findAll();
+		
+		UnitOfMeasure unit = mUnitOfMeasureRepository.findById(cart2.getUnitOfMeasure().getId()).orElse(null);
+		
+		rsMap.put("cartId", cart2.getId());
+		rsMap.put("quantity", cart2.getQuantity());
+		rsMap.put("unitOfMeasureId", unit.getId());
+		rsMap.put("unitOfMeasureName", unit.getValue());
+		rsMap.put("unitOfMeasureImageUrl", unit.getImageUrl());
+		rsMap.put("baseUnitOfMeasureId", unit.getBaseUnitOfMeasure().getId().trim());
+		rsMap.put("productId", unit.getProduct().getId().trim());
+		rsMap.put("price", getPrice(priceDetails, priceHeaders, unit.getId()));
+		rsMap.put("productName", unit.getProduct().getName().trim());
+		
+		return new ResponseMap(0, "Successfully", rsMap);
 		
     }
 	
@@ -200,15 +224,21 @@ public class CartController {
 		return new ResponseMap(0, "Successfully", null);
 	}
 	
-	@PutMapping("/")
-	public MyHttpResponse update(@Validated @RequestBody Cart cart) {
-	Cart cart1 = cartRepository.save(cart);
-    	
-    	if (cart1 == null) {
-    		return new MyHttpResponse(404, "Cập nhật không thành công", null);
+	@DeleteMapping("/")
+	public Map<String, Object> deleteAll(@RequestHeader("token") String token){
+		User user = authService.verifyToken(token);
+		if (user == null) {
+			return new ResponseMap(401, "Authentication failed", null);
 		}
 		
-        return new MyHttpResponse(200, "Cập nhật thành công" , cart1);
+		List<Cart> carts = cartRepository.findByUserId(user.getId().trim());
+		if (carts == null) {
+			return new ResponseMap(1, "Failed", null);
+		}
+		
+		cartRepository.deleteAll(carts);
+		
+		return new ResponseMap(0, "Successfully", null);
 	}
 	
 	private Double getPrice(List<PriceDetail> priceDetails, List<PriceHeader> priceHeaders, int unitId) {

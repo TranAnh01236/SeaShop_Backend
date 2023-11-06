@@ -29,8 +29,8 @@ public class PromotionDetail implements Serializable{
 	@GenericGenerator(name = "promotion_detail_id_generator", strategy = "org.trananh.shoppingappbackend.ultilities.idGenerator.PromotionDetailIdGenerator")
 	private String id;
 	
-	@Column(name = "product_id", nullable = true)
-	private String productId;
+	@Column(name = "unit_of_measure_id", nullable = true)
+	private int unitOfMeasureId;
 	
 	@Column(name = "purchase_value", nullable = false)
 	private double purchaseValue;
@@ -38,11 +38,8 @@ public class PromotionDetail implements Serializable{
 	@Column(name = "promotion_value", nullable = false)
 	private double promotionValue;
 	
-	@Column(name = "max_turn", nullable = false)
-	private int maxTurn;
-	
-	@Column(name = "max_money", nullable = false)
-	private double maxMoney;
+	@Column(name = "max_value", nullable = false)
+	private double maxValue;
 	
 	@ManyToOne
 	@JoinColumn(name = "promotion_line_id")
@@ -57,16 +54,14 @@ public class PromotionDetail implements Serializable{
 		this.id = id;
 	}
 
-	public PromotionDetail(String id, String productId, double purchaseValue, double promotionValue, int maxTurn,
-			double maxMoney, PromotionLine promotionLine) {
+	public PromotionDetail(String id, int unitOfMeasureId, double purchaseValue, double promotionValue, double maxValue, PromotionLine promotionLine) {
 		super();
 		this.id = id;
-		this.productId = productId;
 		this.purchaseValue = purchaseValue;
 		this.promotionValue = promotionValue;
-		this.maxTurn = maxTurn;
-		this.maxMoney = maxMoney;
+		this.maxValue = maxValue;
 		this.promotionLine = promotionLine;
+		this.unitOfMeasureId = unitOfMeasureId;
 	}
 
 	public String getId() {
@@ -75,14 +70,6 @@ public class PromotionDetail implements Serializable{
 
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getProductId() {
-		return productId;
-	}
-
-	public void setProductId(String productId) {
-		this.productId = productId;
 	}
 
 	public double getPurchaseValue() {
@@ -101,20 +88,12 @@ public class PromotionDetail implements Serializable{
 		this.promotionValue = promotionValue;
 	}
 
-	public int getMaxTurn() {
-		return maxTurn;
+	public double getMaxValue() {
+		return maxValue;
 	}
 
-	public void setMaxTurn(int maxTurn) {
-		this.maxTurn = maxTurn;
-	}
-
-	public double getMaxMoney() {
-		return maxMoney;
-	}
-
-	public void setMaxMoney(double maxMoney) {
-		this.maxMoney = maxMoney;
+	public void setMaxValue(double maxValue) {
+		this.maxValue = maxValue;
 	}
 
 	public PromotionLine getPromotionLine() {
@@ -125,11 +104,19 @@ public class PromotionDetail implements Serializable{
 		this.promotionLine = promotionLine;
 	}
 
+	public int getUnitOfMeasureId() {
+		return unitOfMeasureId;
+	}
+
+	public void setUnitOfMeasureId(int unitOfMeasureId) {
+		this.unitOfMeasureId = unitOfMeasureId;
+	}
+
 	@Override
 	public String toString() {
-		return "PromotionDetail [id=" + id + ", productId=" + productId + ", purchaseValue=" + purchaseValue
-				+ ", promotionValue=" + promotionValue + ", maxTurn=" + maxTurn + ", maxMoney=" + maxMoney
-				+ ", promotionLine=" + promotionLine + "]";
+		return "PromotionDetail [id=" + id + ", unitOfMeasureId=" + unitOfMeasureId + ", purchaseValue=" + purchaseValue
+				+ ", promotionValue=" + promotionValue + ", maxValue=" + maxValue + ", promotionLine=" + promotionLine
+				+ "]";
 	}
 	
 }

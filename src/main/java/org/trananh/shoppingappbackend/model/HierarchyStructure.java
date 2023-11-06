@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.annotations.GenericGenerator;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Column;
@@ -25,7 +27,8 @@ public class HierarchyStructure implements Serializable{
 	private static final long serialVersionUID = 1L;
 	
 	@Id
-	@GeneratedValue(strategy=GenerationType.AUTO)
+	@GeneratedValue(generator = "hierarchy_structure_id_generator")
+	@GenericGenerator(name = "hierarchy_structure_id_generator", strategy = "org.trananh.shoppingappbackend.ultilities.idGenerator.HierarchyStructureIdGenerator")
 	private int id;
 	
 	@Column(name = "value", nullable = false, columnDefinition = "nvarchar(max)")

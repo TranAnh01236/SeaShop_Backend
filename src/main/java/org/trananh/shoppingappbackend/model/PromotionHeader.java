@@ -1,6 +1,7 @@
 package org.trananh.shoppingappbackend.model;
 
 import java.io.Serializable;
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,10 +41,10 @@ public class PromotionHeader implements Serializable{
 	private String description;
 	
 	@Column(name = "start_date", nullable = true)
-	private Timestamp startDate;
+	private Date startDate;
 	
 	@Column(name = "end_date", nullable = true)
-	private Timestamp endDate;
+	private Date endDate;
 	
 	@Column(name = "status", nullable = false)
 	private int status = 0;
@@ -64,7 +65,7 @@ public class PromotionHeader implements Serializable{
 		this.id = id;
 	}
 
-	public PromotionHeader(String id, String name, String description, Timestamp startDate, Timestamp endDate,
+	public PromotionHeader(String id, String name, String description, Date startDate, Date endDate,
 			int status, User createUser) {
 		super();
 		this.id = id;
@@ -101,19 +102,19 @@ public class PromotionHeader implements Serializable{
 		this.description = description;
 	}
 
-	public Timestamp getStartDate() {
+	public Date getStartDate() {
 		return startDate;
 	}
 
-	public void setStartDate(Timestamp startDate) {
+	public void setStartDate(Date startDate) {
 		this.startDate = startDate;
 	}
 
-	public Timestamp getEndDate() {
+	public Date getEndDate() {
 		return endDate;
 	}
 
-	public void setEndDate(Timestamp endDate) {
+	public void setEndDate(Date endDate) {
 		this.endDate = endDate;
 	}
 
