@@ -13,4 +13,7 @@ public interface CartRepository extends JpaRepository<Cart, Integer>{
 	
 	@Query(value = "select * from carts where user_id = ?1", nativeQuery=true)
 	List<Cart> findByUserId(String userId);
+	
+	@Query(value = "select MAX(u.id) as max from unit_of_measures u", nativeQuery = true)
+	int getMaxId();
 }

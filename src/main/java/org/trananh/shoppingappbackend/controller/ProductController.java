@@ -32,7 +32,6 @@ import org.trananh.shoppingappbackend.repository.StructureValueRepository;
 import org.trananh.shoppingappbackend.repository.UnitOfMeasureRepository;
 import org.trananh.shoppingappbackend.service.AuthService;
 import org.trananh.shoppingappbackend.ultilities.Constants;
-import org.trananh.shoppingappbackend.ultilities.MyHttpResponseArray;
 import org.trananh.shoppingappbackend.ultilities.ResponseMap;
 import org.trananh.shoppingappbackend.ultilities.ResponseMapArray;
 
@@ -91,6 +90,7 @@ public class ProductController {
 						m.put("unitOfMeasureId", mapUnit.get("id"));
 						m.put("baseUnitOfMeasureImageUrl", mapUnit.get("image_url"));
 						m.put("categoryId", pro.getCategory().getId());
+						m.put("unitQuantity", Integer.parseInt(mapUnit.get("quantity").toString()));
 						
 						m.put("price", getPrice(priceDetails, priceHeaders, Integer.parseInt(mapUnit.get("id").toString())));
 						
@@ -245,6 +245,10 @@ public class ProductController {
 		
 		List<Map<String, Object>> lstUnit = productRepository.fullTextSearch(keySearch);
 		
+		for(Map<String, Object> m1 : lstUnit) {
+			System.out.println(Constants.gson.toJson(m1));
+		}
+		
 		List<PriceHeader> priceHeaders = mPriceHeaderRepository.findAllStatusTrue();
 		List<PriceDetail> priceDetails = mPriceDetailRepository.findAll();
 		
@@ -268,6 +272,7 @@ public class ProductController {
 						m.put("unitOfMeasureId", mapUnit.get("id"));
 						m.put("baseUnitOfMeasureImageUrl", mapUnit.get("image_url"));
 						m.put("categoryId", pro.getCategory().getId());
+						m.put("unitQuantity", Integer.parseInt(mapUnit.get("quantity").toString()));
 						
 						m.put("price", getPrice(priceDetails, priceHeaders, Integer.parseInt(mapUnit.get("id").toString())));
 						

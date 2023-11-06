@@ -11,7 +11,7 @@ public interface ProductRepository extends JpaRepository<Product, String>{
 	@Query(value = "select * from products where category_id = ?1", nativeQuery=true)
 	List<Product> findByStructurevalue(String structureValueId);
 	
-	@Query(value = "select u.id, u.product_id, u.base_unit_of_measure_id, b.value, u.image_url "
+	@Query(value = "select u.id, u.product_id, u.base_unit_of_measure_id, b.value, u.image_url, u.quantity "
 			+ "from unit_of_measures u "
 			+ "inner join base_unit_of_measures b "
 			+ "on u.base_unit_of_measure_id = b.id "
@@ -20,6 +20,6 @@ public interface ProductRepository extends JpaRepository<Product, String>{
 			+ "inner join structure_values s "
 			+ "on p.category_id = s.id "
 			+ "where u.quantity = 1 and "
-			+ "s.value like %:keySearch% or p.name like %:keySearch% or b.value like %:keySearch%", nativeQuery = true)
+			+ "(s.value like %:keySearch% or p.name like %:keySearch% or b.value like %:keySearch%)", nativeQuery = true)
 	List<Map<String, Object>> fullTextSearch(String keySearch);
 }
